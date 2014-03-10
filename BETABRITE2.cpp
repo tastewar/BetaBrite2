@@ -11,7 +11,7 @@
    (c) 2011
 */
 #ifdef DATEFUNCTIONS
-#include "RTClib.h"
+#include <RTClib.h>
 #endif
 #include "BETABRITE2.h"
 #define BB_BETWEEN_COMMAND_DELAY 110
@@ -39,7 +39,7 @@ BETABRITE::~BETABRITE ( void )
 void BETABRITE::WriteTextFile ( const char Name, const char *Contents, const char initColor, const char Position, const char Mode, const char Special )
 {
 	BeginCommand ( );
-	BeginNestedCommand ( );
+	print ( BB_STX );
 	WriteTextFileNested ( Name, Contents, initColor, Position, Mode, Special );
 	EndCommand ( );
 }
@@ -71,7 +71,7 @@ void BETABRITE::WritePriorityTextFileNested ( const char *Contents, const char i
 void BETABRITE::CancelPriorityTextFile ( void )
 {
 	BeginCommand ( );
-	BeginNestedCommand ( );
+	print ( BB_STX );
 	print ( BB_CC_WTEXT );
 	print ( BB_PRIORITY_FILE_LABEL );
 	EndCommand ( );
@@ -80,7 +80,7 @@ void BETABRITE::CancelPriorityTextFile ( void )
 void BETABRITE::WriteStringFile ( const char Name, const char *Contents )
 {
 	BeginCommand ( );
-	BeginNestedCommand ( );
+	print ( BB_STX );
 	WriteStringFileNested ( Name, Contents );
 	EndCommand ( );
 }
@@ -92,29 +92,60 @@ void BETABRITE::WriteStringFileNested ( const char Name, const char *Contents )
 	print ( (char *)Contents );
 }
 
-void BETABRITE::SetMemoryConfiguration ( const char startingFile, unsigned int numFiles, unsigned int size )
+void BETABRITE::BeginSpecialCommand ( )
 {
   BeginCommand ( );
-  BeginNestedCommand ( );
+  print ( BB_STX );
   print ( BB_CC_WSPFUNC );
-  print ( BB_SFL_CLEARMEM );
+}
 
-  char sizeBuf[5] = "0100";
-  if (size <= 0xffff)
+void BETABRITE::SetRunSequence ( const char SeqType, bool Locked, const char *FileLabels )
+{
+	BeginSpecialCommand ( );
+	print ( BB_SFL_SETRUNSEQ );
+	if ( SeqType == BB_RS_TIME || SeqType == BB_RS_SEQUENCE || SeqType == BB_RS_DELETE ) print ( SeqType );
+	else print ( BB_RS_SEQUENCE );
+	if ( Locked ) print ( BB_SFKPS_LOCKED );
+	else print ( BB_SFKPS_UNLOCKED );
+	print ( FileLabels );
+	EndCommand ( );
+}
+
+void BETABRITE::StartMemoryConfigurationCommand ( )
+{
+  BeginSpecialCommand ( );
+  print ( BB_SFL_CONFIGMEM );
+}
+
+void BETABRITE::EndMemoryConfigurationCommand ( )
+{
+	EndCommand ( );
+}
+
+void BETABRITE::SetMemoryConfigurationSimple ( const char startingFile, unsigned int numFiles, unsigned int size, const char fileType, bool Locked, unsigned int HexFlags )
+{
+	Serial.println ( "top of SMCS" );
+	StartMemoryConfigurationCommand ( );
+	SetMemoryConfigurationSection ( startingFile, numFiles, size, fileType, Locked, HexFlags );
+	EndMemoryConfigurationCommand ( );
+}
+
+void BETABRITE::SetMemoryConfigurationSection ( const char startingFile, unsigned int numFiles, unsigned int size, const char fileType, bool Locked, unsigned int HexFlags )
+{
+  char	cbuf[128];
+  if ( fileType == BB_SFFT_STRING ) HexFlags = 0;
+  else if ( fileType == BB_SFFT_DOTS )
   {
-    sprintf(sizeBuf, "%04x", size);
+	  if ( HexFlags != BB_DFT_MONO && HexFlags != BB_DFT_3COLOR && HexFlags != BB_DFT_8COLOR || HexFlags == 0 ) HexFlags = BB_DFT_MONO; // monochrome default
   }
+  // must be TEXT file
+  else if ( HexFlags == 0 || HexFlags > BB_RT_ALWAYS ) HexFlags = BB_RT_ALWAYS;
 
-  for (char c = startingFile; c <  startingFile + numFiles; c++)
+  for ( char c = startingFile; c < startingFile + numFiles; c++ )
   {
-    print ( c );
-    print ( BB_SFFT_TEXT );
-    print ( BB_SFKPS_LOCKED );
-    print ( sizeBuf );
-    print ( "FF00" );    // AlwaysOn for text file
+	  sprintf ( cbuf, "%c%c%c%04X%04X", c, fileType, ( fileType == BB_SFFT_STRING || Locked ) ? BB_SFKPS_LOCKED : BB_SFKPS_UNLOCKED, min(size, 0xFFFF), HexFlags );
+	  print ( cbuf );
   }
-
-  EndCommand ( );
 }
 
 void BETABRITE::BeginCommand ( void )
@@ -125,6 +156,7 @@ void BETABRITE::BeginCommand ( void )
 void BETABRITE::BeginNestedCommand ( void )
 {
 	print ( BB_STX );
+	DelayBetweenCommands ( );
 }
 
 void BETABRITE::EndCommand ( void )
@@ -159,7 +191,6 @@ void BETABRITE::SetDateTime ( DateTime now, bool UseMilitaryTime )
 
 	BeginCommand ( );
 	BeginNestedCommand ( );
-	DelayBetweenCommands ( );
 	print ( BB_CC_WSPFUNC );
 	print ( ' ' );
 	if ( hour <= 9 )
@@ -176,19 +207,16 @@ void BETABRITE::SetDateTime ( DateTime now, bool UseMilitaryTime )
 	print ( strbuff );
 	EndNestedCommand ( );
 	BeginNestedCommand ( );
-	DelayBetweenCommands ( );
 	print ( BB_CC_WSPFUNC );
 	print ( '\047' );
 	print ( UseMilitaryTime ? 'M' : 'S' );
 	EndNestedCommand ( );
 	BeginNestedCommand ( );
-	DelayBetweenCommands ( );
 	print ( BB_CC_WSPFUNC );
 	print ( '&' );
 	print ( dow );
 	EndNestedCommand ( );
 	BeginNestedCommand ( );
-	DelayBetweenCommands ( );
 	print ( BB_CC_WSPFUNC );
 	print ( ';' );
 	if ( month <= 9 )

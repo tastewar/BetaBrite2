@@ -255,7 +255,8 @@
 
 // Special Function Labels
 
-#define BB_SFL_CLEARMEM '$'
+#define BB_SFL_CONFIGMEM '$'
+#define BB_SFL_SETRUNSEQ '.'
 
 // Special Function File Types
 
@@ -268,7 +269,23 @@
 #define BB_SFKPS_LOCKED    'L'
 #define BB_SFKPS_UNLOCKED  'U'
 
+// Special run-time constants
+#define BB_RT_ALLDAY  0xFD00
+#define BB_RT_NEVER   0xFE00
+#define BB_RT_ALWAYS  0xFF00
+
+// run sequence constants
+#define BB_RS_TIME		'T'
+#define BB_RS_SEQUENCE	'S'
+#define BB_RS_DELETE	'D'
+
+// Dots file types
+#define BB_DFT_MONO   0x1000
+#define BB_DFT_3COLOR 0x2000
+#define BB_DFT_8COLOR 0x4000
+
 // Miscellaneous
 
 #define BB_PRIORITY_FILE_LABEL '0'
+#define BB_MAX_STRING_FILE_SIZE 125
 #endif

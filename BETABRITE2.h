@@ -31,7 +31,12 @@ public:
 	void CancelPriorityTextFile ( void );
 	void WriteStringFile ( const char Name, const char *Contents );
 	void WriteStringFileNested ( const char Name, const char *Contents );
-	void SetMemoryConfiguration ( const char startingFile, unsigned int numFiles=26, unsigned int size=256 );
+	void BeginSpecialCommand ( void );
+	void SetRunSequence ( const char SeqType, bool Locked, const char *FileLabels );
+	void StartMemoryConfigurationCommand ( );
+	void EndMemoryConfigurationCommand ( );
+	void SetMemoryConfigurationSimple ( const char startingFile='A', unsigned int numFiles=26, unsigned int size=256, const char fileType=BB_SFFT_TEXT, bool Locked=true, unsigned int HexFlags=0 );
+	void SetMemoryConfigurationSection ( const char startingFile='A', unsigned int numFiles=26, unsigned int size=256, const char fileType=BB_SFFT_TEXT, bool Locked=true, unsigned int HexFlags=0 );
 	void BeginCommand ( void );
 	void BeginNestedCommand ( void );
 	void EndCommand ( void );
