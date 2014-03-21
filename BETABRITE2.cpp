@@ -14,7 +14,6 @@
 #include <RTClib.h>
 #endif
 #include "BETABRITE2.h"
-#define BB_BETWEEN_COMMAND_DELAY 110
 
 BETABRITE::BETABRITE ( Stream& dev, const char Type, const char Address[2] )
 {
