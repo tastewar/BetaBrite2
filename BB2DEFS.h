@@ -25,7 +25,7 @@
 
 // Sign Types
 #define BB_ST_ALLVV                '\041'
-#define BB_ST_SERCLK               '\042
+#define BB_ST_SERCLK               '\042'
 #define BB_ST_ALPHAVISION          '\043'
 #define BB_ST_ALPHAVISIONFM        '\044'
 #define BB_ST_ALPHAVISIONCM        '\045'
